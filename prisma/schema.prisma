@@ -1,0 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Super Admin user model
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      String   @default("SUPER_ADMIN")
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Site-wide settings (header, footer, logo, etc.)
+model SiteSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g., "header_logo", "footer_year", "contact_phone"
+  value       String
+  type        String   @default("text") // text, image, json, html
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+// Dynamic pages content
+model Page {
+  id          String     @id @default(cuid())
+  slug        String     @unique // "home", "about", "services", "portfolio", "classes", "contact"
+  title       String
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  sections    Section[]
+}
+
+// Page sections (hero, features, testimonials, etc.)
+model Section {
+  id        String   @id @default(cuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  title     String
+  type      String   // "hero", "features", "content", "gallery", "contact_form", etc.
+  content   String   // JSON string containing section data
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pageId, order])
+}
+
+// Services management
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String?  // icon name or image URL
+  features    String?  // JSON array of features
+  price       String?
+  duration    String?
+  image       String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+}
+
+// Classes/Courses management
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  level       String   // "Beginner", "Intermediate", "Advanced"
+  price       String
+  duration    String   // "12 weeks", "3 months", etc.
+  lessons     Int      @default(0)
+  students    Int      @default(0)
+  image       String?
+  curriculum  String?  // JSON string with course curriculum
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+}
+
+// Portfolio/Projects management
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String   // "Web Development", "Mobile App", "E-commerce", etc.
+  technologies String  // JSON array of technologies used
+  images      String   // JSON array of image URLs
+  liveUrl     String?
+  githubUrl   String?
+  clientName  String?
+  completedAt DateTime?
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, order])
+}
+
+// Team members
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  position    String
+  bio         String?
+  skills      String?  // JSON array of skills
+  image       String?
+  linkedinUrl String?
+  githubUrl   String?
+  twitterUrl  String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+}
+
+// Testimonials
+model Testimonial {
+  id         String   @id @default(cuid())
+  name       String
+  position   String?
+  company    String?
+  content    String
+  rating     Int      @default(5)
+  image      String?
+  isActive   Boolean  @default(true)
+  isFeatured Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Contact form submissions (for tracking)
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  service   String?
+  subject   String
+  message   String
+  status    String   @default("NEW") // NEW, READ, REPLIED, CLOSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
+// Media files (for file management)
+model MediaFile {
+  id        String   @id @default(cuid())
+  filename  String
+  originalName String
+  mimeType  String
+  size      Int
+  url       String
+  alt       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Content revisions (for version control)
+model ContentRevision {
+  id          String   @id @default(cuid())
+  entityType  String   // "Page", "Section", "Service", etc.
+  entityId    String
+  content     String   // JSON snapshot of the content
+  version     Int
+  userId      String
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId, version])
+}
